@@ -1,11 +1,12 @@
 
+import _ from 'lodash';
 import React, { component } from 'react';
 import ReactDOM from 'react-dom';
 //import the search package we download
 import YTSearch from 'youtube-api-youtube';
 import SearchBar from './components/search_bar';
 import VideoList from './components/video_list';
-const API_KEY = 'youtube key';
+import VideoDetail from './components/video_detail';
 
 
 
@@ -16,20 +17,39 @@ class App extends Component {
     constructor(props) {
         super(props)
 
-        this.state = { videos: [] };
+        //We want to add the concept of selected video to App.state
+        //It will be a video object
+        //It will be always passed to VideoDetail
+        this.state = { 
+            videos: [],
+            selectedVideo: null
+        };
 
         //We want a list of video present by default
-        YTSearch({key : API_KEY, term : 'surfboards'}, (videos) => {
-          this.setState({ videos })  //With ES6 we can compact { videos: videos }
-        });
+        this.videoSearch('surfboards')
     }
+
+    videoSearch(term){
+        YTSearch({key: API_KEY, term: term}, (videos) => {
+            this.setState({ 
+                videos: videos,//With ES6 we can compact { videos: videos }
+                selectedVideo: videos[0]
+              })  
+          });
+    }
+
     //VideoList will need a reference to the list of video
     //We need to pass from the parent component to the child component
     render() { 
+        const videoSearch = _.debounce((term) => { this.videoSearch(term) }, 300);
         return (
         <div>
-            <SearchBar />
-            <VideoList videos= {this.state.videos}/>
+            <SearchBar onSearchTermChange={videoSearch} />
+            <VideoDetail video={this.state.selectedVideo}/>
+            <VideoList
+                onVideoSelect={video => this.state({selectedVideo}) }
+                videos= {this.state.videos}
+                />
         </div>
         );
     }
